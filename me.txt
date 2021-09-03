@@ -1,0 +1,65 @@
+AWS EC2 VPN solution for enterprise
+    1. Install & Configuration
+        sudo su –
+        yum install -y gcc
+        wget http://jp.softether-download.com/files/softether/v4.29-9680-rtm-2019.02.28-tree/Linux/SoftEther_VPN_Server/64bit_-_Intel_x64_or_AMD64/softether-vpnserver-v4.29-9680-rtm-2019.02.28-linux-x64-64bit.tar.gz
+        tar -zxvf softether-vpnserver-v4.29-9680-rtm-2019.02.28-linux-x64-64bit.tar.gz
+        cd vpnserver
+        make
+        cd ./
+        mv vpnserver /usr/local
+    Set permission
+        cd /usr/local/vpnserver/
+        chmod 600 *
+        chmod 700 vpncmd
+        chmod 700 vpnserver
+    2. Create start-up script
+        vi /etc/init.d/vpnserver
+            #!/bin/sh
+            # chkconfig: 2345 99 01
+            # description: SoftEther VPN Server
+            DAEMON=/usr/local/vpnserver/vpnserver
+            LOCK=/var/lock/subsys/vpnserver
+            test -x $DAEMON || exit 0
+            case "$1" in
+            start)
+            $DAEMON start
+            touch $LOCK
+            ;;
+            stop)
+            $DAEMON stop
+            rm $LOCK
+            ;;
+            restart)
+            $DAEMON stop
+            sleep 3
+            $DAEMON start
+            ;;
+            *)
+            echo "Usage: $0 {start|stop|restart}"
+            exit 1
+            esac
+            exit 0
+            
+        chmod 755 /etc/init.d/vpnserver
+        /sbin/chkconfig --add vpnserver 
+        service vpnserver start
+    3. Create HUB for client connection
+        cd /usr/local/vpnserver/
+        ./vpncmd
+        VPN Server> HubList
+        VPN Server> HubCreate
+        Hub Name: web
+        Password: 123456
+    4. Create a VPN account for client access
+        VPN Server> HUB web
+        VPN Server/web> UserList
+        VPN Server/web> UserCreate
+        User Name: quang
+        VPN Server/web> UserPasswordSet
+        User Name: quang
+        Password: 123456
+    5. Using L2TP / IPsec protocol for VPN connection
+        VPN Server/web> IPsecEnable
+    6. DHCP settings
+        VPN Server/web> SecureNatEnable
